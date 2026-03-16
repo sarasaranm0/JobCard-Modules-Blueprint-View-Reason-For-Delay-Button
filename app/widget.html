@@ -22,7 +22,7 @@
   <div id="app" ng-controller="homeController">
 
     <div class="widget-container" ng-if="!CancelFormHideMsg">
-      <div class="container mt-3">
+      <div class="container">
 
         <h5 class="mb-3">Reason For Delay</h5>
 
@@ -34,31 +34,50 @@
               ng-class="{'error-border': errors.delayName}">
           </div> -->
 
-          <div class="col-md-6">
+          <div class="col-md-4">
             <label class="form-label">Job Card ID </label>
             <input type="text" class="form-control" ng-model="form.jobCardName" readonly>
           </div>
 
-          <div class="col-md-6">
+          <div class="col-md-4">
+            <label class="form-label">VIN Number</label>
+            <input type="text" class="form-control" ng-model="form.vin" readonly>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Vehicle Registration Number</label>
+            <input type="text" class="form-control" ng-model="form.rcno" readonly>
+          </div>
+
+          <div class="col-md-4">
             <label class="form-label">Customer</label>
             <input type="text" class="form-control" ng-model="form.customer" readonly>
           </div>
 
-          <div class="col-md-6">
+          <div class="col-md-4">
+            <label class="form-label">Service Technician Name</label>
+            <input type="text" class="form-control" ng-model="form.serviceTechname" readonly>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">JC Owner Name</label>
+            <input type="text" class="form-control" ng-model="form.ownername" readonly>
+          </div>
+
+          <div class="col-md-4">
             <label class="form-label">Check In Day <span class="star">*</span></label>
-            <input type="date" class="form-control" ng-model="form.checkInDay" ng-change="calculateDays()"
+            <input type="datetime-local" class="form-control" ng-model="form.checkInDay" ng-change="calculateDays()"
               ng-class="{'error-border': errors.checkInDay}" readonly>
           </div>
 
-          <div class="col-md-6">
+          <div class="col-md-4">
             <label class="form-label">Gate Pass Day <span class="star">*</span></label>
-            <input type="date" class="form-control" ng-model="form.gatePassDay" ng-change="calculateDays()"
-              ng-class="{'error-border': errors.gatePassDay}">
+            <input type="datetime-local" class="form-control" ng-model="form.gatePassDay" ng-change="calculateDays()" ng-class="{'error-border': errors.gatePassDay}" readonly>
           </div>
 
-          <div class="col-md-6">
-            <label class="form-label">Delayed Days</label>
-            <input type="number" class="form-control" ng-model="form.delayedDays" readonly>
+          <div class="col-md-4">
+            <label class="form-label">Delayed Hours</label>
+            <input type="number" class="form-control" ng-model="form.delayedHours" readonly>
           </div>
 
         </div>
@@ -74,8 +93,8 @@
           <thead class="table-light">
             <tr>
               <th style="width:25%">Delay Reason <span class="star">*</span></th>
-              <th style="width:15%">Delay Days <span class="star">*</span></th>
-              <th>Description</th>
+              <th style="width:15%">Delay Hours <span class="star">*</span></th>
+              <th>Summary of delay <span class="star">*</span></th>
               <th style="width:80px"></th>
             </tr>
           </thead>
@@ -94,12 +113,13 @@
               </td>
 
               <td>
-                <input type="number" class="form-control" ng-model="row.days" ng-change="updateTotal()"
-                  ng-class="{'error-border': row.daysError}">
+                <input type="number" class="form-control" ng-model="row.hours" ng-change="updateTotal()" min="0"
+                  oninput="if(this.value < 0) this.value = 0" ng-class="{'error-border': row.hoursError}">
               </td>
 
               <td>
-                <textarea class="form-control" ng-model="row.description" style="height: 2rem;"></textarea>
+                <textarea class="form-control" ng-model="row.description" style="height: 2rem;"
+                  ng-class="{'error-border': row.descriptionError}"></textarea>
               </td>
 
               <td class="text-center">
@@ -124,7 +144,7 @@
             </button>
           </div>
           <div class="col-md-4 ms-auto">
-            <label class="form-label">Total Delayed Days</label>
+            <label class="form-label">Reason captured for delayed hours</label>
             <input type="number" class="form-control" ng-model="totalDays" readonly
               ng-class="{'error-border': errors.totalDays}">
           </div>

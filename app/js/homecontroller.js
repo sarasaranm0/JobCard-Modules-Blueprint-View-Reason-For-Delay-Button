@@ -3,6 +3,7 @@ app.controller('homeController', function ($scope, $rootScope, $timeout) {
     $rootScope.pageEntity = pageLoad;
     $scope.isLoading = false;
     $scope.errors = {};
+    // $scope.today = new Date().toISOString().split("T")[0];
 
     console.log($rootScope.pageEntity)
     ZOHO.CRM.API.getRecord({
@@ -16,10 +17,30 @@ app.controller('homeController', function ($scope, $rootScope, $timeout) {
             $scope.form.jobCardId = JobCardDetails.id;
             $scope.form.customerid = JobCardDetails.Customer_Name.id;
             $scope.form.customer = JobCardDetails.Customer_Name.name;
-            let zohoDate = JobCardDetails.Check_In_Date_Time.split("T")[0]; // 2026-03-13
-            let parts = zohoDate.split("-");
-            let tempdate = new Date(parts[0], parts[1] - 1, parts[2]);
+            $scope.form.vin = JobCardDetails.VIN_Number;
+            $scope.form.rcno = JobCardDetails.Vehicle_Registration_Number;
+            $scope.form.serviceTechname = JobCardDetails.Service_Technician_Name.name;
+            $scope.form.serviceTechid = JobCardDetails.Service_Technician_Name.id;
+            $scope.form.rcno = JobCardDetails.Vehicle_Registration_Number;
+            $scope.form.ownername = JobCardDetails.Owner.name;
+            $scope.form.ownerid = JobCardDetails.Owner.id;
+            let zohoDate = JobCardDetails.Check_In_Date_Time; // 2026-03-13
+            console.log("zohoDate", zohoDate);
+            // let parts = zohoDate.split("-");
+            // let tempdate = new Date(parts[0], parts[1] - 1, parts[2]);
+            let tempdate = new Date(zohoDate);
             $scope.form.checkInDay = tempdate;
+            // Gate Pass Date (current time without seconds)
+            let now = new Date();
+            now.setSeconds(0);
+            now.setMilliseconds(0);
+            $scope.form.gatePassDay = now;
+            console.log($scope.form.gatePassDay);
+            // let gatePassDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            // let gatePassDate = new Date(today);
+            // $scope.form.gatePassDay = gatePassDate;
+            // console.log($scope.form.gatePassDay);
+            $scope.calculateDays();
             $scope.$apply()
         }
     })
@@ -30,10 +51,10 @@ app.controller('homeController', function ($scope, $rootScope, $timeout) {
 
     $scope.isAddRowDisabled = function () {
 
-        if (!$scope.form.delayedDays)
+        if (!$scope.form.delayedHours)
             return false;
 
-        if ($scope.totalDays >= $scope.form.delayedDays)
+        if ($scope.totalDays >= $scope.form.delayedHours)
             return true;
 
         return false;
@@ -70,10 +91,6 @@ app.controller('homeController', function ($scope, $rootScope, $timeout) {
             toast.show();
         }, 100);
     };
-    $scope.showToast(
-        "Zoho Connected",
-        "success"
-    );
 
     $scope.form = {};
 
@@ -144,13 +161,13 @@ app.controller('homeController', function ($scope, $rootScope, $timeout) {
 
     $scope.isSubmitEnabled = function () {
 
-        if (!$scope.form.delayedDays)
+        if (!$scope.form.delayedHours)
             return false;
 
         if ($scope.totalDays <= 0)
             return false;
 
-        if ($scope.totalDays != $scope.form.delayedDays)
+        if ($scope.totalDays != $scope.form.delayedHours)
             return false;
 
         return true;
@@ -162,8 +179,8 @@ app.controller('homeController', function ($scope, $rootScope, $timeout) {
 
         $scope.delayRows.forEach(function (row) {
 
-            if (row.days)
-                total += Number(row.days);
+            if (row.hours)
+                total += Number(row.hours);
 
         });
 
@@ -177,9 +194,9 @@ app.controller('homeController', function ($scope, $rootScope, $timeout) {
         let start = new Date($scope.form.checkInDay);
         let end = new Date($scope.form.gatePassDay);
 
-        let diff = (end - start) / (1000 * 60 * 60 * 24);
+        let diffHours = Math.floor((end - start) / (1000 * 60 * 60));
 
-        $scope.form.delayedDays = diff >= 0 ? diff : 0;
+        $scope.form.delayedHours = diffHours >= 0 ? diffHours : 0;
     };
 
     $scope.validateForm = function () {
@@ -189,7 +206,8 @@ app.controller('homeController', function ($scope, $rootScope, $timeout) {
         // reset row errors
         $scope.delayRows.forEach(function (row) {
             row.reasonError = false;
-            row.daysError = false;
+            row.hoursError = false;
+            row.descriptionError = false;
         });
 
         if (!$scope.form.checkInDay) {
@@ -204,9 +222,9 @@ app.controller('homeController', function ($scope, $rootScope, $timeout) {
             return false;
         }
 
-        if ($scope.totalDays != $scope.form.delayedDays) {
+        if ($scope.totalDays != $scope.form.delayedHours) {
             $scope.errors.totalDays = true;
-            $scope.showToast("Total Delay Days must match Delayed Days", "error");
+            $scope.showToast("Reason captured for delayed hours must match Delayed hours", "error");
             return false;
         }
 
@@ -222,10 +240,17 @@ app.controller('homeController', function ($scope, $rootScope, $timeout) {
                 return false;
             }
 
-            if (!row.days) {
+            if (!row.hours) {
 
-                row.daysError = true;    // only this row
-                $scope.showToast("Delay days required in row " + (i + 1), "error");
+                row.hoursError = true;    // only this row
+                $scope.showToast("Delay hours required in row " + (i + 1), "error");
+
+                return false;
+            }
+            if (!row.description) {
+
+                row.descriptionError = true;    // only this row
+                $scope.showToast("Delay description required in row " + (i + 1), "error");
 
                 return false;
             }
@@ -241,19 +266,23 @@ app.controller('homeController', function ($scope, $rootScope, $timeout) {
             delay_name: $scope.form.delayName,
             job_card_id: $scope.form.jobCardId,
             customer: $scope.form.customerid,
+            vin: $scope.form.vin,
+            rcno: $scope.form.rcno,
+            service_tech_id: $scope.form.serviceTechid,
+            ownerid: $scope.form.ownerid,
 
-            checkin_day: $scope.form.checkInDay,
-            gatepass_day: $scope.form.gatePassDay,
+            checkin_day: formatZohoDateTime(new Date($scope.form.checkInDay)),
+            gatepass_day: formatZohoDateTime(new Date($scope.form.gatePassDay)),
 
-            delayed_days: $scope.form.delayedDays,
+            delayed_hours: $scope.form.delayedHours,
             total_delay_days: $scope.totalDays,
 
             delay_reasons: $scope.delayRows.map(function (row) {
 
                 return {
                     reason: row.reason,
-                    days: row.days,
-                    description: row.description
+                    days: row.hours,
+                    summaryofdelay: row.description
                 };
 
             })
@@ -287,7 +316,7 @@ app.controller('homeController', function ($scope, $rootScope, $timeout) {
                         $scope.secondsLeft--;
                         $scope.CancelFormHideMsg =
                             "Reason for delay Created Successfully. This Window will automatically closing in " + $scope.secondsLeft + " seconds.";
-                            $scope.isLoading = false;
+                        $scope.isLoading = false;
                         $scope.$applyAsync();
 
                         if ($scope.secondsLeft === 0) {
